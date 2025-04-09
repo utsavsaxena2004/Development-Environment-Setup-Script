@@ -1,0 +1,191 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------
+# Script to automatically install essential development tools for selected languages
+# on a fresh Debian/Ubuntu-based Linux installation.
+#------------------------------------------------------------------------------
+
+# --- Step 1: Check for sudo privileges ---
+if [[ $EUID -ne 0 ]]; then
+  echo "This script requires sudo privileges. Please run it with sudo."
+  exit 1
+fi
+
+# --- Step 2: Update Package Lists ---
+echo "Step 1: Updating package lists..."
+apt update && apt upgrade -y
+echo "Package lists updated and system upgraded."
+echo "--------------------------------------------------"
+
+# --- Function to install Python development tools ---
+install_python() {
+  echo "Installing Python development tools..."
+  apt install python3 python3-pip -y
+  if [ $? -eq 0 ]; then
+    echo "Python 3 and pip installed successfully."
+    command -v pip3 >/dev/null 2>&1 || { echo "pip3 not found!"; }
+    pip3 --version
+    read -p "Do you want to install virtualenv and virtualenvwrapper? (y/N): " install_venv
+    if [[ "$install_venv" == "y" || "$install_venv" == "Y" ]]; then
+      echo "Installing virtualenv and virtualenvwrapper..."
+      pip3 install virtualenv virtualenvwrapper
+      if [ $? -eq 0 ]; then
+        echo "virtualenv and virtualenvwrapper installed successfully."
+        echo "Remember to add the following lines to your shell's configuration file (~/.bashrc or ~/.zshrc):"
+        echo "export WORKON_HOME=~/.virtualenvs"
+        echo "export PROJECT_HOME=\$WORKON_HOME"
+        echo "source /usr/local/bin/virtualenvwrapper.sh"
+        echo "Then run 'source ~/.bashrc' or 'source ~/.zshrc' to activate them."
+      else
+        echo "Error installing virtualenv or virtualenvwrapper."
+      fi
+    fi
+  else
+    echo "Error installing Python 3 or pip."
+  fi
+  echo "--------------------------------------------------"
+}
+
+# --- Function to install Java development tools ---
+install_java() {
+  echo "Installing Java development tools..."
+  apt install openjdk-17-jdk -y # You can change the JDK version if needed
+  if [ $? -eq 0 ]; then
+    echo "OpenJDK 17 installed successfully."
+    java -version
+    javac -version
+    read -p "Do you want to install Maven? (y/N): " install_maven
+    if [[ "$install_maven" == "y" || "$install_maven" == "Y" ]]; then
+      echo "Installing Maven..."
+      apt install maven -y
+      if [ $? -eq 0 ]; then
+        echo "Maven installed successfully."
+        mvn -v
+      else
+        echo "Error installing Maven."
+      fi
+    fi
+    read -p "Do you want to install Gradle? (y/N): " install_gradle
+    if [[ "$install_gradle" == "y" || "$install_gradle" == "Y" ]]; then
+      echo "Installing Gradle..."
+      apt install gradle -y
+      if [ $? -eq 0 ]; then
+        echo "Gradle installed successfully."
+        gradle --version
+      else
+        echo "Error installing Gradle."
+      fi
+    fi
+  else
+    echo "Error installing OpenJDK 17."
+  fi
+  echo "--------------------------------------------------"
+}
+
+# --- Function to install Node.js development tools ---
+install_nodejs() {
+  echo "Installing Node.js development tools..."
+  # Install Node.js using nvm (recommended)
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+  export NVM_DIR="$([ -s "$HOME/.nvm/nvm.sh" ] && echo "$HOME/.nvm" || printf "nvm not found - install it first")"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash completion
+
+  # Install LTS version of Node.js
+  nvm install --lts
+  nvm use --lts
+
+  if [ $? -eq 0 ]; then
+    echo "Node.js (LTS) and npm installed successfully."
+    node -v
+    npm -v
+    read -p "Do you want to install Yarn? (y/N): " install_yarn
+    if [[ "$install_yarn" == "y" || "$install_yarn" == "Y" ]]; then
+      echo "Installing Yarn..."
+      npm install -g yarn
+      if [ $? -eq 0 ]; then
+        echo "Yarn installed successfully."
+        yarn --version
+      else
+        echo "Error installing Yarn."
+      fi
+    fi
+  else
+    echo "Error installing Node.js."
+  fi
+  echo "--------------------------------------------------"
+}
+
+# --- Function to install common development tools ---
+install_common_tools() {
+  echo "Installing common development tools (git, curl, wget)..."
+  apt install git curl wget -y
+  if [ $? -eq 0 ]; then
+    echo "Git, curl, and wget installed successfully."
+  else
+    echo "Error installing common development tools."
+  fi
+  echo "--------------------------------------------------"
+}
+
+# --- Function to install a command-line code editor ---
+install_editor() {
+  read -p "Do you want to install a command-line code editor? (vim/nano/N): " install_editor_choice
+  if [[ "$install_editor_choice" == "vim" ]]; then
+    echo "Installing vim..."
+    apt install vim -y
+    if [ $? -eq 0 ]; then
+      echo "vim installed successfully."
+    else
+      echo "Error installing vim."
+    fi
+  elif [[ "$install_editor_choice" == "nano" ]]; then
+    echo "Installing nano..."
+    apt install nano -y
+    if [ $? -eq 0 ]; then
+      echo "nano installed successfully."
+    else
+      echo "Error installing nano."
+    fi
+  fi
+  echo "--------------------------------------------------"
+}
+
+# --- Main Menu ---
+while true; do
+  echo "Choose the development tools to install:"
+  echo "1. Python"
+  echo "2. Java"
+  echo "3. Node.js"
+  echo "4. Install common development tools (git, curl, wget)"
+  echo "5. Install a command-line code editor"
+  echo "6. Exit"
+  read -p "Enter your choice (1-6): " choice
+
+  case "$choice" in
+    1)
+      install_python
+      ;;
+    2)
+      install_java
+      ;;
+    3)
+      install_nodejs
+      ;;
+    4)
+      install_common_tools
+      ;;
+    5)
+      install_editor
+      ;;
+    6)
+      echo "Exiting script."
+      break
+      ;;
+    *)
+      echo "Invalid choice. Please enter a number between 1 and 6."
+      ;;
+  esac
+done
+
+echo "Development environment setup complete!"
