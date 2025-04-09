@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/github_badge.png" alt="GitHub Badge" width="100">
   <h1><br>🛠️ Development Environment Setup Script 🚀<br></h1>
   <p>Your Fast Lane to a Ready-to-Code Linux System!</p>
 </div>
